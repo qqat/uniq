@@ -1,0 +1,59 @@
+---
+- hosts: [localhost]
+  remote_user: root
+  become: yes
+  tasks:    
+    - name: install supervisor
+      apt: name=supervisor state=present      
+    
+    - name: install docker
+      apt: name=docker state=present
+
+    - name: Starting docker
+      service:
+        name: docker
+        state: started       
+        
+    - name: upload the site directory to the docker host
+      synchronize: src=site/ dest=/opt/run/webphp/
+
+    - name: copy supervisor conf file
+      copy:
+        src: site5.conf
+        dest: /etc/supervisor/conf.d/site5.conf
+        owner: root
+        group: root
+        mode: 0644
+        
+    - name: Starting supervisor
+      service:
+        name: supervisor
+        state: started    
+
+    - name: Run supervisor reread
+      shell: supervisorctl reread
+      args:
+        executable: /bin/bash
+
+    - name: Run supervisor reload
+      shell: supervisorctl reload
+      args:
+        executable: /bin/bash        
+           
+      
+    - name: build the image
+      docker_image: >
+        name=mysite2
+        tag=php2
+        path=/opt/run/webphp
+        state=present
+        
+    - name: run the site in a docker container
+      docker:
+        name: site2
+        image: "mysite2:php2"
+        state: reloaded
+        #publish_all_ports: yes
+        expose: 80:80
+        ports: 
+        - "80:80"
