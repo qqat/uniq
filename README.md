@@ -1,4 +1,4 @@
-"# uniq" 
+"# uniq " 
 install 
 
  ansible-playbook -i localhost test.yml
